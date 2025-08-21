@@ -1,17 +1,19 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include "../lib/BH1750.h"        // ✅ claws/BH1750 라이브러리 사용
+#include "../lib/BH1750.h"        // claws/BH1750 라이브러리 사용
 #include <RTClib.h>               // PlatformIO lib_deps: adafruit/RTClib
 
 // ------------------- 센서 객체 -------------------
-BH1750 lightMeter;     // ✅ claws/BH1750 객체
+BH1750 lightMeter;
 RTC_DS3231 rtc;
 
-const int TURBIDITY_PIN = A1;     // DZ-225 g-force / 탁도 센서
+const int TURBIDITY_PIN = A1;     // DZ-225 탁도 센서
 const int SOUND_SENSOR_PIN = 22;  // CZN-15E 사운드 센서 디지털 출력
 
 // ------------------- 진동 모터 -------------------
-const int MOTOR_PIN = 23;         // ✅ 빈 포트 사용 (예: D23번 핀)
+const int MOTOR_PIN = 7;           // PWM 가능한 핀 (DC/ERM 모터)
+int motorIntensity = 0;            // 0~255 PWM 값
+int intensityStep = 50;            // 테스트용 증가 단위
 
 // ------------------- 타이머 -------------------
 unsigned long previousMillis = 0;
@@ -40,12 +42,9 @@ void setup() {
 
     // 핀 모드
     pinMode(SOUND_SENSOR_PIN, INPUT_PULLUP);
-
-    // 진동 모터 핀
     pinMode(MOTOR_PIN, OUTPUT);
-    digitalWrite(MOTOR_PIN, LOW); // 시작은 꺼짐 상태
-
-    Serial.println("\n--- HAMO Sensor + Motor 통합 테스트 시작 ---");
+    analogWrite(MOTOR_PIN, 0); // 시작은 꺼짐
+    Serial.println("\n--- HAMO Sensor + PWM Motor 테스트 시작 ---");
 }
 
 void loop() {
@@ -85,11 +84,12 @@ void loop() {
         Serial.print("사운드 감지: ");
         Serial.println(soundDetected ? "YES" : "NO");
 
-        // --- 진동 모터 테스트 ---
-        Serial.println("진동모터 ON (1초)");
-        digitalWrite(MOTOR_PIN, HIGH);
-        delay(1000);
-        Serial.println("진동모터 OFF");
-        digitalWrite(MOTOR_PIN, LOW);
+        // --- 진동 모터 PWM 테스트 ---
+        Serial.print("모터 PWM 강도: ");
+        Serial.println(motorIntensity);
+        analogWrite(MOTOR_PIN, motorIntensity);
+
+        motorIntensity += intensityStep;    // 50씩 증가
+        if (motorIntensity > 255) motorIntensity = 0;  // 0~255 반복
     }
 }
