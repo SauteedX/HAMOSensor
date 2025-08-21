@@ -12,12 +12,16 @@ const int SOUND_SENSOR_PIN = 22;  // CZN-15E 사운드 센서 디지털 출력
 
 // ------------------- 진동 모터 -------------------
 const int MOTOR_PIN = 7;           // PWM 가능한 핀 (DC/ERM 모터)
-int motorIntensity = 0;            // 0~255 PWM 값
-int intensityStep = 50;            // 테스트용 증가 단위
+#define TABLE_SIZE 64
+uint8_t sineTable[TABLE_SIZE];    // 8비트 PWM에 맞춘 사인파 테이블 (0~255)
+uint16_t sineIndex = 0;
 
 // ------------------- 타이머 -------------------
 unsigned long previousMillis = 0;
-const long interval = 2000; // 2초 간격
+const long interval = 2000; // 2초 간격 센서 읽기
+const long pwmInterval = 2000 / TABLE_SIZE; // 사인파 주기 분할 (2초 동안 한 주기)
+
+unsigned long previousPwmMillis = 0;
 
 void setup() {
     Serial.begin(9600);
@@ -44,12 +48,19 @@ void setup() {
     pinMode(SOUND_SENSOR_PIN, INPUT_PULLUP);
     pinMode(MOTOR_PIN, OUTPUT);
     analogWrite(MOTOR_PIN, 0); // 시작은 꺼짐
+
+    // 사인파 테이블 생성 (0~255 범위)
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        sineTable[i] = (uint8_t)((sin(2.0 * PI * i / TABLE_SIZE) + 1.0) * 127.5);
+    }
+
     Serial.println("\n--- HAMO Sensor + PWM Motor 테스트 시작 ---");
 }
 
 void loop() {
-    // 2초 간격 센서 읽기
     unsigned long currentMillis = millis();
+
+    // 2초 간격 센서 읽기
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
 
@@ -83,13 +94,18 @@ void loop() {
         bool soundDetected = (digitalRead(SOUND_SENSOR_PIN) == LOW);
         Serial.print("사운드 감지: ");
         Serial.println(soundDetected ? "YES" : "NO");
+    }
 
-        // --- 진동 모터 PWM 테스트 ---
-        Serial.print("모터 PWM 강도: ");
-        Serial.println(motorIntensity);
-        analogWrite(MOTOR_PIN, motorIntensity);
+    // PWM 사인파 출력 (2초 주기를 TABLE_SIZE 점으로 분할)
+    if (currentMillis - previousPwmMillis >= pwmInterval) {
+        previousPwmMillis = currentMillis;
 
-        motorIntensity += intensityStep;    // 50씩 증가
-        if (motorIntensity > 255) motorIntensity = 0;  // 0~255 반복
+        uint8_t pwmValue = sineTable[sineIndex];
+        analogWrite(MOTOR_PIN, pwmValue);
+
+        Serial.print("모터 PWM 사인파 출력: ");
+        Serial.println(pwmValue);
+
+        sineIndex = (sineIndex + 1) % TABLE_SIZE;
     }
 }
