@@ -1,12 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "../lib/BH1750.h"        // ✅ claws/BH1750 라이브러리 사용
-#include <RTClib.h>        // PlatformIO lib_deps: adafruit/RTClib
-
-// ------------------- 블루투스 HC-05 -------------------
-#define BTSerial Serial2
-const int BT_STATE_PIN = 18;
-const int BT_EN_PIN = 19;
+#include <RTClib.h>               // PlatformIO lib_deps: adafruit/RTClib
 
 // ------------------- 센서 객체 -------------------
 BH1750 lightMeter;     // ✅ claws/BH1750 객체
@@ -15,6 +10,9 @@ RTC_DS3231 rtc;
 const int TURBIDITY_PIN = A1;     // DZ-225 g-force / 탁도 센서
 const int SOUND_SENSOR_PIN = 22;  // CZN-15E 사운드 센서 디지털 출력
 
+// ------------------- 진동 모터 -------------------
+const int MOTOR_PIN = 23;         // ✅ 빈 포트 사용 (예: D23번 핀)
+
 // ------------------- 타이머 -------------------
 unsigned long previousMillis = 0;
 const long interval = 2000; // 2초 간격
@@ -22,8 +20,6 @@ const long interval = 2000; // 2초 간격
 void setup() {
     Serial.begin(9600);
     while(!Serial);
-
-    BTSerial.begin(9600);
 
     // I2C 초기화
     Wire.begin();
@@ -44,21 +40,15 @@ void setup() {
 
     // 핀 모드
     pinMode(SOUND_SENSOR_PIN, INPUT_PULLUP);
-    pinMode(BT_EN_PIN, OUTPUT);
-    digitalWrite(BT_EN_PIN, LOW);
 
-    Serial.println("\n--- HAMO Sensor 통합 테스트 시작 ---");
+    // 진동 모터 핀
+    pinMode(MOTOR_PIN, OUTPUT);
+    digitalWrite(MOTOR_PIN, LOW); // 시작은 꺼짐 상태
+
+    Serial.println("\n--- HAMO Sensor + Motor 통합 테스트 시작 ---");
 }
 
 void loop() {
-    // 블루투스 ↔ 시리얼 브릿지
-    if (BTSerial.available()) {
-        Serial.write(BTSerial.read());
-    }
-    if (Serial.available()) {
-        BTSerial.write(Serial.read());
-    }
-
     // 2초 간격 센서 읽기
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
@@ -94,5 +84,12 @@ void loop() {
         bool soundDetected = (digitalRead(SOUND_SENSOR_PIN) == LOW);
         Serial.print("사운드 감지: ");
         Serial.println(soundDetected ? "YES" : "NO");
+
+        // --- 진동 모터 테스트 ---
+        Serial.println("진동모터 ON (1초)");
+        digitalWrite(MOTOR_PIN, HIGH);
+        delay(1000);
+        Serial.println("진동모터 OFF");
+        digitalWrite(MOTOR_PIN, LOW);
     }
 }
