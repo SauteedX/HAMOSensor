@@ -3,6 +3,12 @@
 #include "../lib/BH1750.h"        // claws/BH1750 라이브러리 사용
 #include <RTClib.h>               // PlatformIO lib_deps: adafruit/RTClib
 
+// ------------------- BT PINS -------------------
+#define BT_RX_PIN 17    // Arduino TX2
+#define BT_TX_PIN 16    // Arduino RX2
+#define BT_STATE_PIN 18 // 연결 상태핀(실제 결선에 맞게 조정)
+#define BT_EN_PIN   19  // EN 핀(필요시, 실제 결선에 맞게 조정)
+
 // ------------------- 센서 객체 -------------------
 BH1750 lightMeter;
 RTC_DS3231 rtc;
@@ -24,11 +30,22 @@ const long pwmInterval = 2000 / TABLE_SIZE; // 사인파 주기 분할 (2초 동
 unsigned long previousPwmMillis = 0;
 
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(9600);//PC Serial Monitor
     while(!Serial);
+
 
     // I2C 초기화
     Wire.begin();
+
+    pinMode(BT_STATE_PIN, INPUT);
+    pinMode(BT_EN_PIN, OUTPUT);
+    digitalWrite(BT_EN_PIN, LOW);
+    delay(100);
+    digitalWrite(BT_EN_PIN, HIGH);
+    delay(100);
+
+    Serial2.begin(38400);//BT Module
+    Serial3.begin(115200);//Arduino MKR Zero
 
     // BH1750 초기화
     if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
@@ -55,11 +72,18 @@ void setup() {
     }
 
     Serial.println("\n--- HAMO Sensor + PWM Motor 테스트 시작 ---");
-}
+
+    char id[3];
+   }
 
 void loop() {
     unsigned long currentMillis = millis();
+    if (Serial2.available()) {
+        String cmd = Serial2.readStringUntil('\n');
+        if (cmd == "1") {       //안드로이드에서 입력 들어온것 IF문 처리
 
+        }
+    }
     // 2초 간격 센서 읽기
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
