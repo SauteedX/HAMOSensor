@@ -8,8 +8,8 @@
 // ------------------- BT PINS -------------------
 #define BT_RX_PIN 17
 #define BT_TX_PIN 16
-#define BT_STATE_PIN 18
-#define BT_EN_PIN   19
+#define BT_STATE_PIN 40
+#define BT_EN_PIN   41
 
 // ------------------- 센서 객체 -------------------
 BH1750 lightMeter;
@@ -52,7 +52,7 @@ float prev_ax, prev_ay, prev_az, prev_gx, prev_gy, prev_gz;
 
 // ------------------- 타이머 -------------------
 unsigned long previousMillis = 0;
-const long interval = 2000;
+const long interval = 500;
 const long pwmInterval = 4000 / TABLE_SIZE;
 unsigned long previousPwmMillis = 0;
 
@@ -92,10 +92,11 @@ void setup() {
 
     if (!mpu.begin()) {
         Serial.println("[Error] MPU6050 센서를 찾을 수 없습니다!");
-        while (1) { delay(10); }
-    }
-    Serial.println("[OK] MPU6050 센서가 준비되었습니다.");
 
+    }
+    else {
+        Serial.println("[OK] MPU6050 센서가 준비되었습니다.");
+    }
     pinMode(SOUND_SENSOR_PIN, INPUT_PULLUP);
     pinMode(MOTOR_PIN, OUTPUT);
     pinMode(HEATING_FILM_PIN, OUTPUT);
@@ -119,13 +120,23 @@ void loop() {
 
     if (Serial2.available()) {
         String cmd = Serial2.readStringUntil('\n');
-        id += cmd;
-        // ✨ MKRZero로부터 받은 응답을 출력하는 부분은 이곳으로 옮기는 것이 좋습니다.
-        Serial.println("!!MKRZero::"+cmd);
+        id = cmd;
+    }
+    if (Serial3.available()) {
+        String zeros = Serial3.readStringUntil('\n');
+        Serial.println("[MKR Zero] " + zeros);
     }
 
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
+        Serial.println();
+        Serial.println();
+        Serial.println();
+        Serial.println();
+        Serial.println();
+        Serial.println();
+        Serial.println();
+        Serial.println();
         Serial.println("\n=== 센서 값 ===");
         float lux = lightMeter.readLightLevel();
         Serial.print("조도(Lux): "); Serial.println(lux);
@@ -183,10 +194,7 @@ void loop() {
 
     handleSystemState();
 
-    if (id.length() == 3) {
-        Serial3.println(id);
-        // id = "";
-    }
+    Serial3.println(id);
 }
 
 // ------------------- 시스템 상태 제어 함수들 -------------------
