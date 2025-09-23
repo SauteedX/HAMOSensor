@@ -30,22 +30,21 @@ uint16_t sineIndex = 0;
 bool isMotorFadingOut = false;
 uint8_t motorFadePwmValue = 0;
 unsigned long lastFadeStepTime = 0;
-const int FADE_INTERVAL_MS = 15; // 페이드 아웃 속도 (값이 작을수록 부드러움)
+const int FADE_INTERVAL_MS = 15;
 
 // ------------------- 발열 필름 & 모터 공통 제어 -------------------
 const int HEATING_FILM_PIN = 8;
-bool isHeating = false; // 시스템 활성화 상태 변수
+bool isHeating = false;
 unsigned long pressureStartTime = 0;
 unsigned long lastActivityTime = 0;
 bool pressureHasChanged = false;
 
-// 활성화/비활성화 제어용 설정값
 const int PRESSURE_THRESHOLD = 500;
 const unsigned long ACTIVATION_TIME = 2000;
 const unsigned long INACTIVITY_TIMEOUT = 5000;
 const float IMU_CHANGE_THRESHOLD = 0.5;
 
-// IMU 센서 값 저장을 위한 변수
+// IMU 센서 값 저장
 sensors_event_t a, g, temp;
 int previousPressure = 0;
 float prev_ax, prev_ay, prev_az, prev_gx, prev_gy, prev_gz;
@@ -56,18 +55,12 @@ const long interval = 500;
 const long pwmInterval = 4000 / TABLE_SIZE;
 unsigned long previousPwmMillis = 0;
 
-String id;
-
 // 함수 프로토타입 선언
 void activateSystem();
 void deactivateSystem();
 void handleSystemState();
 
-
 void setup() {
-    Serial.begin(9600);
-    while (!Serial);
-
     Wire.begin();
 
     pinMode(BT_STATE_PIN, INPUT);
@@ -75,27 +68,26 @@ void setup() {
     digitalWrite(BT_EN_PIN, LOW); delay(100);
     digitalWrite(BT_EN_PIN, HIGH); delay(100);
 
-    Serial2.begin(38400); //BT Module
-    Serial3.begin(115200); //Arduino MKR Zero
+    Serial2.begin(38400); // 블루투스 모듈용
+    Serial3.begin(115200); // MKR Zero 연결
 
     if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
-        Serial.println("[OK] BH1750 조도 센서 초기화 완료");
+        Serial2.println("[OK] BH1750 조도 센서 초기화 완료");
     } else {
-        Serial.println("[Error] BH1750 조도 센서 초기화 실패");
+        Serial2.println("[Error] BH1750 조도 센서 초기화 실패");
     }
 
     if (!rtc.begin()) {
-        Serial.println("[Error] RTC 모듈을 찾을 수 없습니다.");
+        Serial2.println("[Error] RTC 모듈을 찾을 수 없습니다.");
     } else {
-        Serial.println("[OK] RTC 모듈 초기화 완료");
+        Serial2.println("[OK] RTC 모듈 초기화 완료");
     }
 
     if (!mpu.begin()) {
-        Serial.println("[Error] MPU6050 센서를 찾을 수 없습니다!");
-
+        Serial2.println("[Error] MPU6050 센서를 찾을 수 없습니다!");
     }
     else {
-        Serial.println("[OK] MPU6050 센서가 준비되었습니다.");
+        Serial2.println("[OK] MPU6050 센서가 준비되었습니다.");
     }
     pinMode(SOUND_SENSOR_PIN, INPUT_PULLUP);
     pinMode(MOTOR_PIN, OUTPUT);
@@ -109,92 +101,84 @@ void setup() {
 
     previousPressure = analogRead(PRESSURE_SENSOR_PIN);
     mpu.getEvent(&a, &g, &temp);
-    prev_ax = a.acceleration.x; prev_ay = a.acceleration.y; prev_az = a.acceleration.z;
-    prev_gx = g.gyro.x; prev_gy = g.gyro.y; prev_gz = g.gyro.z;
+    prev_ax = a.acceleration.x;
+    prev_ay = a.acceleration.y;
+    prev_az = a.acceleration.z;
+    prev_gx = g.gyro.x;
+    prev_gy = g.gyro.y;
+    prev_gz = g.gyro.z;
 
-    Serial.println("\n--- HAMO Sensor with Fade-out Vibration 테스트 시작 ---");
+    Serial2.println("\n--- HAMO Sensor with Fade-out Vibration 테스트 시작 ---");
 }
 
 void loop() {
     unsigned long currentMillis = millis();
 
+    // BT에서 들어온 신호를 MKR Zero로 릴레이
     if (Serial2.available()) {
         String cmd = Serial2.readStringUntil('\n');
-        id = cmd;
+        Serial3.println(cmd); // 즉시 MKR Zero로 전송
     }
     if (Serial3.available()) {
         String zeros = Serial3.readStringUntil('\n');
-        Serial.println("[MKR Zero] " + zeros);
+        Serial2.println("[MKR Zero] " + zeros); // BLT로 피드백도 전송 가능
     }
 
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
-        Serial.println();
-        Serial.println();
-        Serial.println();
-        Serial.println();
-        Serial.println();
-        Serial.println();
-        Serial.println();
-        Serial.println();
-        Serial.println("\n=== 센서 값 ===");
+        Serial2.println("\n=== 센서 값 ===");
         float lux = lightMeter.readLightLevel();
-        Serial.print("조도(Lux): "); Serial.println(lux);
+        Serial2.print("조도(Lux): "); Serial2.println(lux);
 
         DateTime now = rtc.now();
-        Serial.print("현재 시간: ");
-        Serial.print(now.year()); Serial.print("-"); Serial.print(now.month()); Serial.print("-");
-        Serial.print(now.day()); Serial.print(" "); Serial.print(now.hour()); Serial.print(":");
-        Serial.print(now.minute()); Serial.print(":"); Serial.println(now.second());
+        Serial2.print("현재 시간: ");
+        Serial2.print(now.year()); Serial2.print("-");
+        Serial2.print(now.month()); Serial2.print("-");
+        Serial2.print(now.day()); Serial2.print(" ");
+        Serial2.print(now.hour()); Serial2.print(":");
+        Serial2.print(now.minute()); Serial2.print(":");
+        Serial2.println(now.second());
 
         int turbidityRaw = analogRead(TURBIDITY_PIN);
-        Serial.print("DZ-225 값(Raw): "); Serial.println(turbidityRaw);
+        Serial2.print("DZ-225 값(Raw): "); Serial2.println(turbidityRaw);
 
         bool soundDetected = (digitalRead(SOUND_SENSOR_PIN) == LOW);
-        Serial.print("사운드 감지: "); Serial.println(soundDetected ? "YES" : "NO");
+        Serial2.print("사운드 감지: "); Serial2.println(soundDetected ? "YES" : "NO");
     }
 
-    // ✨ --- 진동 모터 제어 로직 (페이드 아웃 적용) ---
-    // 조건 1: 시스템이 활성화된 상태일 때 (숨쉬기 모드)
+    // 진동 모터 제어 (페이드 아웃)
     if (isHeating) {
-        isMotorFadingOut = false; // 페이드 아웃 상태 해제
+        isMotorFadingOut = false;
         if (currentMillis - previousPwmMillis >= pwmInterval) {
             previousPwmMillis = currentMillis;
             uint8_t pwmValue = sineTable[sineIndex];
             analogWrite(MOTOR_PIN, pwmValue);
-            motorFadePwmValue = pwmValue; // 페이드 아웃 시작점으로 현재 PWM 값 저장
+            motorFadePwmValue = pwmValue;
             sineIndex = (sineIndex + 1) % TABLE_SIZE;
         }
     }
-    // 조건 2: 시스템이 비활성화 상태일 때 (모터를 꺼야 할 때)
     else {
-        // 2-1: 모터가 돌고 있었다면, 페이드 아웃 시작
         if (motorFadePwmValue > 0 && !isMotorFadingOut) {
             isMotorFadingOut = true;
             lastFadeStepTime = currentMillis;
         }
-
-        // 2-2: 페이드 아웃이 진행 중일 때
         if (isMotorFadingOut) {
             if (currentMillis - lastFadeStepTime > FADE_INTERVAL_MS) {
                 lastFadeStepTime = currentMillis;
-                motorFadePwmValue--; // PWM 값 1씩 감소
+                motorFadePwmValue--;
                 analogWrite(MOTOR_PIN, motorFadePwmValue);
 
-                // 2-3: 페이드 아웃 완료
                 if (motorFadePwmValue <= 0) {
                     isMotorFadingOut = false;
                     motorFadePwmValue = 0;
-                    analogWrite(MOTOR_PIN, 0); // 확실하게 끄기
-                    sineIndex = 0; // 다음을 위해 패턴 초기화
+                    analogWrite(MOTOR_PIN, 0);
+                    sineIndex = 0;
                 }
             }
         }
     }
 
     handleSystemState();
-
-    Serial3.println(id);
 }
 
 // ------------------- 시스템 상태 제어 함수들 -------------------
@@ -246,13 +230,12 @@ void activateSystem() {
     isHeating = true;
     digitalWrite(HEATING_FILM_PIN, HIGH);
     lastActivityTime = millis();
-    Serial.println("SYSTEM ACTIVATED: Film ON & Motor Breathing 🔥");
+    Serial2.println("SYSTEM ACTIVATED: Film ON & Motor Breathing 🔥");
 }
 
 void deactivateSystem() {
     if (!isHeating) return;
     isHeating = false;
-    // ✨ analogWrite(MOTOR_PIN, 0); 제거 -> 페이드 아웃 로직이 처리
     pressureStartTime = 0;
-    Serial.println("SYSTEM DEACTIVATED: Film & Motor OFF 💤");
+    Serial2.println("SYSTEM DEACTIVATED: Film & Motor OFF 💤");
 }
