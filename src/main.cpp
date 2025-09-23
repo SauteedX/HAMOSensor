@@ -4,6 +4,7 @@
 #include <Adafruit_Sensor.h>
 #include "../lib/BH1750.h"
 #include <RTClib.h>
+#include "../lib/DiamondEye.h"
 
 // ------------------- BT PINS -------------------
 #define BT_RX_PIN 17
@@ -60,9 +61,11 @@ void activateSystem();
 void deactivateSystem();
 void handleSystemState();
 
+DiamondEye eye(ledPins);
+
 void setup() {
     Wire.begin();
-
+    eye.begin();
     pinMode(BT_STATE_PIN, INPUT);
     pinMode(BT_EN_PIN, OUTPUT);
     digitalWrite(BT_EN_PIN, LOW); delay(100);
