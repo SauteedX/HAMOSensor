@@ -52,7 +52,7 @@ float prev_ax, prev_ay, prev_az, prev_gx, prev_gy, prev_gz;
 
 // ------------------- 타이머 -------------------
 unsigned long previousMillis = 0;
-const long interval = 500;
+const long interval = 1000;
 const long pwmInterval = 4000 / TABLE_SIZE;
 unsigned long previousPwmMillis = 0;
 
@@ -61,17 +61,17 @@ void activateSystem();
 void deactivateSystem();
 void handleSystemState();
 
-DiamondEye eye(ledPins);
+//DiamondEye eye(ledPins);
 
 void setup() {
     Wire.begin();
-    eye.begin();
+    //eye.begin();
     pinMode(BT_STATE_PIN, INPUT);
     pinMode(BT_EN_PIN, OUTPUT);
     digitalWrite(BT_EN_PIN, LOW); delay(100);
     digitalWrite(BT_EN_PIN, HIGH); delay(100);
 
-    Serial2.begin(38400); // 블루투스 모듈용
+    Serial2.begin(9600); // 블루투스 모듈용
     Serial3.begin(115200); // MKR Zero 연결
 
     if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
