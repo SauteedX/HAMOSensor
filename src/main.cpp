@@ -68,6 +68,7 @@ void setup() {
     //eye.begin();
     pinMode(BT_STATE_PIN, INPUT);
     pinMode(BT_EN_PIN, OUTPUT);
+    pinMode(A8, INPUT);
     digitalWrite(BT_EN_PIN, LOW); delay(100);
     digitalWrite(BT_EN_PIN, HIGH); delay(100);
 
@@ -147,6 +148,7 @@ void loop() {
 
         bool soundDetected = (digitalRead(SOUND_SENSOR_PIN) == LOW);
         Serial2.print("사운드 감지: "); Serial2.println(soundDetected ? "YES" : "NO");
+        Serial2.print("감압센서 입력: "); Serial2.println(analogRead(A8));
     }
 
     // 진동 모터 제어 (페이드 아웃)
