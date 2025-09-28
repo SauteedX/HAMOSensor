@@ -52,7 +52,7 @@ float prev_ax, prev_ay, prev_az, prev_gx, prev_gy, prev_gz;
 
 // ------------------- 타이머 -------------------
 unsigned long previousMillis = 0;
-const long interval = 1000;
+const long interval = 5000;
 const long pwmInterval = 4000 / TABLE_SIZE;
 unsigned long previousPwmMillis = 0;
 
@@ -72,8 +72,11 @@ void setup() {
     digitalWrite(BT_EN_PIN, LOW); delay(100);
     digitalWrite(BT_EN_PIN, HIGH); delay(100);
 
-    Serial2.begin(9600); // 블루투스 모듈용
+
+    Serial2.begin(38400); // 블루투스 모듈용
     Serial3.begin(115200); // MKR Zero 연결
+
+    while (digitalRead(BT_STATE_PIN != HIGH)) {}
 
     if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
         Serial2.println("[OK] BH1750 조도 센서 초기화 완료");
@@ -93,6 +96,7 @@ void setup() {
     else {
         Serial2.println("[OK] MPU6050 센서가 준비되었습니다.");
     }
+    Serial2.flush();
     pinMode(SOUND_SENSOR_PIN, INPUT_PULLUP);
     pinMode(MOTOR_PIN, OUTPUT);
     pinMode(HEATING_FILM_PIN, OUTPUT);
@@ -131,7 +135,7 @@ void loop() {
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
         Serial2.println("\n=== 센서 값 ===");
-        float lux = lightMeter.readLightLevel();
+        float lux = 10.0;// lightMeter.readLightLevel(); //조도센서 배선문제!
         Serial2.print("조도(Lux): "); Serial2.println(lux);
 
         DateTime now = rtc.now();
@@ -184,11 +188,14 @@ void loop() {
     }
 
     handleSystemState();
+    Serial2.flush();
 }
 
 // ------------------- 시스템 상태 제어 함수들 -------------------
 void handleSystemState() {
-    int currentPressure = analogRead(PRESSURE_SENSOR_PIN);
+    activateSystem();
+    /*
+     int currentPressure = analogRead(PRESSURE_SENSOR_PIN);
     mpu.getEvent(&a, &g, &temp);
 
     if (!isHeating) {
@@ -228,6 +235,7 @@ void handleSystemState() {
     previousPressure = currentPressure;
     prev_ax = a.acceleration.x; prev_ay = a.acceleration.y; prev_az = a.acceleration.z;
     prev_gx = g.gyro.x; prev_gy = g.gyro.y; prev_gz = g.gyro.z;
+    */
 }
 
 void activateSystem() {
@@ -235,6 +243,7 @@ void activateSystem() {
     isHeating = true;
     digitalWrite(HEATING_FILM_PIN, HIGH);
     lastActivityTime = millis();
+    analogWrite(MOTOR_PIN, 10);
     Serial2.println("SYSTEM ACTIVATED: Film ON & Motor Breathing 🔥");
 }
 
