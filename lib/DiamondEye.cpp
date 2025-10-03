@@ -1,12 +1,12 @@
 #include "DiamondEye.h"
 
-const int ledPins[8] = {40, 41, 42, 43, 44, 45, 46, 47};
+const int ledPins[8] = {42, 43, 44, 45, 46, 47, 48, 49};
 
-const bool DIAMOND_SMILE[8] = {1,0,0,0, 1,0,0,0};
-const bool DIAMOND_SAD[8]   = {0,0,1,0, 0,0,1,0};
-const bool DIAMOND_SIDE[8]  = {0,1,0,1, 0,1,0,1};
-const bool DIAMOND_ALL[8]   = {1,1,1,1, 1,1,1,1};
-const bool DIAMOND_OFF[8]   = {0,0,0,0, 0,0,0,0};
+const bool EYE_SMILE[8] = {1,1,1,0, 1,1,1,0};
+const bool EYE_SHUT[8]   = {0,0,0,1, 0,0,0,1};
+const bool EYE_SAD[8]    = {1,0,1,0, 1,1,0,0};
+const bool EYE_ALL[8]   = {1,1,1,1, 1,1,1,1};
+const bool EYE_OFF[8]   = {0,0,0,0, 0,0,0,0};
 
 DiamondEye::DiamondEye(const int pins[8]) {
     for (int i = 0; i < 8; ++i) {

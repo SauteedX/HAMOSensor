@@ -7,11 +7,11 @@
 extern const int ledPins[8];
 
 // 표정 패턴 배열들 (상수)
-extern const bool DIAMOND_SMILE[8];  // ^^
-extern const bool DIAMOND_SAD[8];    // 아래만 o o
-extern const bool DIAMOND_SIDE[8];   // 좌/우만 o o
-extern const bool DIAMOND_ALL[8];    // 전체 점등
-extern const bool DIAMOND_OFF[8];    // 전체 소등
+extern const bool EYE_SMILE[8];
+extern const bool EYE_SAD[8];
+extern const bool EYE_SHUT[8];
+extern const bool EYE_ALL[8];
+extern const bool EYE_OFF[8];
 
 class DiamondEye {
 public:

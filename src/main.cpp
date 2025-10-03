@@ -135,7 +135,7 @@ void loop() {
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
         Serial2.println("\n=== 센서 값 ===");
-        float lux = 10.0;// lightMeter.readLightLevel(); //조도센서 배선문제!
+        float lux = lightMeter.readLightLevel(); //조도센서 배선문제!
         Serial2.print("조도(Lux): "); Serial2.println(lux);
 
         DateTime now = rtc.now();
