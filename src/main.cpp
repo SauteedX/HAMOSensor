@@ -52,7 +52,7 @@ float prev_ax, prev_ay, prev_az, prev_gx, prev_gy, prev_gz;
 
 // ------------------- 타이머 -------------------
 unsigned long previousMillis = 0;
-const long interval = 5000;
+const long interval = 100;
 const long pwmInterval = 4000 / TABLE_SIZE;
 unsigned long previousPwmMillis = 0;
 
@@ -69,6 +69,9 @@ void setup() {
     pinMode(BT_STATE_PIN, INPUT);
     pinMode(BT_EN_PIN, OUTPUT);
     pinMode(A8, INPUT);
+    pinMode(A9, INPUT);
+    pinMode(A10, INPUT);
+    pinMode(A11, INPUT);
     digitalWrite(BT_EN_PIN, LOW); delay(100);
     digitalWrite(BT_EN_PIN, HIGH); delay(100);
 
@@ -135,7 +138,7 @@ void loop() {
     if (currentMillis - previousMillis >= interval) {
         previousMillis = currentMillis;
         Serial2.println("\n=== 센서 값 ===");
-        float lux = lightMeter.readLightLevel(); //조도센서 배선문제!
+        float lux = 100.0;//lightMeter.readLightLevel(); //조도센서 배선문제!
         Serial2.print("조도(Lux): "); Serial2.println(lux);
 
         DateTime now = rtc.now();
@@ -152,7 +155,20 @@ void loop() {
 
         bool soundDetected = (digitalRead(SOUND_SENSOR_PIN) == LOW);
         Serial2.print("사운드 감지: "); Serial2.println(soundDetected ? "YES" : "NO");
-        Serial2.print("감압센서 입력: "); Serial2.println(analogRead(A8));
+        Serial2.print("감압센서1: ");
+        Serial2.println(analogRead(A8));
+
+        Serial2.print("감압센서2: ");
+        Serial2.println(analogRead(A9));
+
+        Serial2.print("감압센서3: ");
+        Serial2.println(analogRead(A10));
+
+        Serial2.print("감압센서4: ");
+        Serial2.println(analogRead(A11));
+
+        Serial2.println("--------------------"); // 구분선
+
     }
 
     // 진동 모터 제어 (페이드 아웃)
@@ -243,7 +259,7 @@ void activateSystem() {
     isHeating = true;
     digitalWrite(HEATING_FILM_PIN, HIGH);
     lastActivityTime = millis();
-    analogWrite(MOTOR_PIN, 10);
+    analogWrite(MOTOR_PIN, 3);
     Serial2.println("SYSTEM ACTIVATED: Film ON & Motor Breathing 🔥");
 }
 
